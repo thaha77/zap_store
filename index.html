@@ -474,7 +474,7 @@
         const ADMIN_PASSWORD = "zap123";
         let isAdminLoggedIn = false;
 
-        let products = [
+        const defaultProducts = [
             {
                 id: 1,
                 title: "Zap Store Glow Routine Combo (Self-Care Skincare & Scalp Set)",
@@ -490,6 +490,13 @@
                 description: "✨ GLOW ROUTINE COMBO SET ✨\n\nPackage Includes:\n1. Facial Ice Roller Contour\n2. Silicone Scalp Massager Brush\n3. Dual-Ended Facial Cleansing Brush\n4. Silicone Lip Scrubbers\n\nMade with high-grade food-safe silicone."
             }
         ];
+
+        // Load saved products from LocalStorage
+        let products = JSON.parse(localStorage.getItem("zap_store_products")) || defaultProducts;
+
+        function saveProductsToStorage() {
+            localStorage.setItem("zap_store_products", JSON.stringify(products));
+        }
 
         let cart = [];
         let selectedCategory = 'all';
@@ -604,6 +611,7 @@
         function deleteProduct(productId) {
             if(confirm("Are you sure you want to delete this product?")) {
                 products = products.filter(p => p.id !== productId);
+                saveProductsToStorage();
                 loadProducts();
             }
         }
@@ -701,6 +709,7 @@
                     alert("New product saved successfully!");
                 }
 
+                saveProductsToStorage();
                 loadProducts();
                 resetAdminForm();
                 adminPanel.classList.add("hidden");
