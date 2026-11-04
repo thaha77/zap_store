@@ -1,14 +1,50 @@
-const ADMIN_PASSWORD = "zap123";
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCQAgqrNimf8YvKWgxR9mDS5gwea0CMZ-c",
+    authDomain: "zap-store-1674c.firebaseapp.com",
+    projectId: "zap-store-1674c",
+    storageBucket: "zap-store-1674c.firebasestorage.app",
+    messagingSenderId: "171244523263",
+    appId: "1:171244523263:web:5e08ac8aa1a4603db946ca",
+    measurementId: "G-GJR77GG8C3"
+};
+
+// Initialize Firebase (Compat version)
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const ADMIN_PASSWORD = "black_shadow";
 let isAdminLoggedIn = false;
 
-// Force reset cache and load fresh Vegetable Chopper with stable working image for all visitors
-const STORE_VERSION = "v5_chopper_working_image";
-if (localStorage.getItem("zap_store_version") !== STORE_VERSION) {
-    localStorage.removeItem("zap_store_products");
-    localStorage.setItem("zap_store_version", STORE_VERSION);
-}
-
 const defaultProducts = [
+    {
+        id: 1709400000002,
+        title: "3-in-1 Glass Oil & Vinegar Dispenser Combo (1000ml, 500ml & 250ml)",
+        price: 250,
+        originalPrice: 299,
+        category: "home",
+        stock: "In Stock",
+        images: [
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.26%20PM%20%281%29.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.26%20PM%20%281%29.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-04%20at%208.21.17%20PM.jpeg"
+        ],
+        description: "✨ 3-IN-1 GLASS OIL & VINEGAR DISPENSER COMBO ✨\n\nUpgrade your kitchen with this stylish 3-in-1 Glass Oil & Vinegar Dispenser Combo (1000ml, 500ml, and 250ml Duck Brush Dispenser).\n\nFeatures:\n1. Leak-proof design for mess-free pouring.\n2. Premium food-grade glass construction.\n3. Sleek and modern look for your kitchen counter.\n\nPerfect for keeping your kitchen neat and organized!"
+    },
+    {
+        id: 1709400000003,
+        title: "4-in-1 Self-Care & Skincare Combo Set (Ice Roller + Scalp Massager + Facial Brushes)",
+        price: 199,
+        originalPrice: 250,
+        category: "home",
+        stock: "In Stock",
+        images: [
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-04%20at%208.21.17%20PM.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.26%20PM%20%281%29.jpeg"
+        ],
+        description: "✨ 4-IN-1 SELF-CARE & SKINCARE COMBO SET ✨\n\nUpgrade your daily self-care routine with the ultimate Skincare & Massager Combo Set!\n\nFeatures:\n1. Silicone Ice Roller: Helps reduce face puffiness, dark circles, and tightens pores.\n2. Scalp Massager Brush: Stimulates hair growth and deeply cleanses the scalp.\n3. Facial Cleansing Brushes & Spatulas: For gentle face exfoliation and easy mask application.\n\nPremium silicone material | Washable & Reusable | Perfect for gifting!"
+    },
     {
         id: 1709400000001,
         title: "Vegetable Chopper & Onion Cutter (450 ML Handy Compact Cutter)",
@@ -17,25 +53,15 @@ const defaultProducts = [
         category: "home",
         stock: "In Stock",
         images: [
-            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%282%29.jpeg",
             "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%281%29.jpeg",
-            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%282%29.jpeg"
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%283%29.jpeg"
         ],
         description: "✨ 450 ML HANDY VEGETABLE CHOPPER & ONION CUTTER ✨\n\nFeatures:\n1. Sharp stainless steel tri-blades for fast chopping.\n2. Durable food-grade plastic container (450 ML).\n3. Easy pull-cord mechanism for hassle-free operation.\n4. Perfect for onions, garlic, tomatoes, vegetables, and salads.\n\nEasy to clean and compact for everyday kitchen use."
     }
 ];
 
-
-let products = JSON.parse(localStorage.getItem("zap_store_products")) || defaultProducts;
-
-function saveProductsToStorage() {
-    try {
-        localStorage.setItem("zap_store_products", JSON.stringify(products));
-    } catch (e) {
-        alert("Storage full! Please delete some old products.");
-    }
-}
-
+let products = [];
 let cart = [];
 let selectedCategory = 'all';
 
@@ -57,6 +83,25 @@ const checkoutModal = document.getElementById("checkoutModal");
 const closeModal = document.getElementById("closeModal");
 const orderForm = document.getElementById("orderForm");
 
+// --- REAL-TIME FIREBASE SYNC ---
+function initRealtimeProducts() {
+    db.collection("products").onSnapshot((snapshot) => {
+        let cloudProducts = [];
+        snapshot.forEach((doc) => {
+            cloudProducts.push({ firestoreId: doc.id, ...doc.data() });
+        });
+
+        if (cloudProducts.length === 0) {
+            defaultProducts.forEach(prod => {
+                db.collection("products").add(prod);
+            });
+        } else {
+            products = cloudProducts;
+            loadProducts();
+        }
+    });
+}
+
 function loadProducts() {
     productGrid.innerHTML = "";
     const filtered = selectedCategory === 'all' 
@@ -71,14 +116,14 @@ function loadProducts() {
         if(isAdminLoggedIn) {
             adminButtonsHTML = `
                 <div class="admin-controls">
-                    <button class="admin-edit-btn" onclick="event.stopPropagation(); editProduct(${product.id})">✏️ Edit</button>
-                    <button class="admin-delete-btn" onclick="event.stopPropagation(); deleteProduct(${product.id})">🗑️ Delete</button>
+                    <button class="admin-edit-btn" onclick="event.stopPropagation(); editProduct('${product.firestoreId}')">✏️ Edit</button>
+                    <button class="admin-delete-btn" onclick="event.stopPropagation(); deleteProduct('${product.firestoreId}')">🗑️ Delete</button>
                 </div>
             `;
         }
 
         productGrid.innerHTML += `
-            <div class="product-card" onclick="openProduct(${product.id})">
+            <div class="product-card" onclick="openProduct('${product.firestoreId}')">
                 <span class="${stockClass}">${product.stock}</span>
                 <div class="product-img-box">
                     <img src="${mainImg}" alt="${product.title}" class="product-img">
@@ -89,7 +134,7 @@ function loadProducts() {
                         <span class="selling-price">₹${product.price}</span>
                         <span class="original-price">₹${product.originalPrice}</span>
                     </div>
-                    <button class="add-btn" onclick="event.stopPropagation(); addToCart(${product.id})">Add to Cart</button>
+                    <button class="add-btn" onclick="event.stopPropagation(); addToCart('${product.firestoreId}')">Add to Cart</button>
                     ${adminButtonsHTML}
                 </div>
             </div>
@@ -123,15 +168,15 @@ function toggleAdminPanel() {
 function resetAdminForm() {
     document.getElementById("editProductId").value = "";
     document.getElementById("adminFormTitle").innerText = "⚡ Admin Panel: Add Product";
-    document.getElementById("saveProductBtn").innerText = "✨ Save Product";
+    document.getElementById("saveProductBtn").innerText = "✨ Save Product to Cloud";
     addProductForm.reset();
 }
 
-function editProduct(productId) {
-    const product = products.find(p => p.id === productId);
+function editProduct(firestoreId) {
+    const product = products.find(p => p.firestoreId === firestoreId);
     if(!product) return;
 
-    document.getElementById("editProductId").value = product.id;
+    document.getElementById("editProductId").value = product.firestoreId;
     document.getElementById("newTitle").value = product.title;
     document.getElementById("newPrice").value = product.price;
     document.getElementById("newOriginalPrice").value = product.originalPrice;
@@ -140,17 +185,19 @@ function editProduct(productId) {
     document.getElementById("newDesc").value = product.description;
 
     document.getElementById("adminFormTitle").innerText = "✏️ Admin Panel: Edit Product";
-    document.getElementById("saveProductBtn").innerText = "💾 Update Product";
+    document.getElementById("saveProductBtn").innerText = "💾 Update Cloud Product";
 
     adminPanel.classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function deleteProduct(productId) {
-    if(confirm("Are you sure you want to delete this product?")) {
-        products = products.filter(p => p.id !== productId);
-        saveProductsToStorage();
-        loadProducts();
+function deleteProduct(firestoreId) {
+    if(confirm("Are you sure you want to delete this product from cloud?")) {
+        db.collection("products").doc(firestoreId).delete().then(() => {
+            alert("Product deleted successfully!");
+        }).catch((error) => {
+            alert("Error deleting product: " + error);
+        });
     }
 }
 
@@ -166,15 +213,9 @@ function compressImageFile(file, callback) {
             let height = img.height;
 
             if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
             } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height;
-                    height = MAX_HEIGHT;
-                }
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
             }
 
             canvas.width = width;
@@ -206,7 +247,7 @@ addProductForm.addEventListener("submit", (e) => {
 
     let existingImages = [];
     if(editId) {
-        const oldProd = products.find(p => p.id == editId);
+        const oldProd = products.find(p => p.firestoreId === editId);
         if(oldProd) existingImages = oldProd.images || [];
     }
 
@@ -215,13 +256,11 @@ addProductForm.addEventListener("submit", (e) => {
     let totalToLoad = 0;
     let loadedCount = 0;
 
-    filesArr.forEach(file => {
-        if(file) totalToLoad++;
-    });
+    filesArr.forEach(file => { if(file) totalToLoad++; });
 
     if(totalToLoad === 0) {
         if(editId) {
-            saveFinalProduct(existingImages);
+            saveToCloud(editId, { title, price, originalPrice, category, stock, description, images: existingImages });
         } else {
             alert("Please select at least a main image!");
         }
@@ -236,45 +275,30 @@ addProductForm.addEventListener("submit", (e) => {
                 if(loadedCount === totalToLoad) {
                     let finalArr = loadedImages.filter(img => img !== undefined);
                     if(editId && finalArr.length === 0) finalArr = existingImages;
-                    saveFinalProduct(finalArr);
+                    
+                    const productData = { title, price, originalPrice, category, stock, description, images: finalArr };
+                    saveToCloud(editId, productData);
                 }
             });
         }
     });
 
-    function saveFinalProduct(finalImages) {
-        if(editId) {
-            const index = products.findIndex(p => p.id == editId);
-            if(index !== -1) {
-                products[index] = {
-                    id: Number(editId),
-                    title,
-                    price,
-                    originalPrice,
-                    category,
-                    stock,
-                    images: finalImages.length > 0 ? finalImages : existingImages,
-                    description
-                };
-                alert("Product updated successfully!");
-            }
+    function saveToCloud(id, data) {
+        if(id) {
+            db.collection("products").doc(id).update(data).then(() => {
+                alert("Product updated in Cloud successfully!");
+                finishAdminAction();
+            });
         } else {
-            const newProd = {
-                id: Date.now(),
-                title,
-                price,
-                originalPrice,
-                category,
-                stock,
-                images: finalImages,
-                description
-            };
-            products.unshift(newProd);
-            alert("New product saved successfully!");
+            data.id = Date.now();
+            db.collection("products").add(data).then(() => {
+                alert("New product added to Cloud successfully!");
+                finishAdminAction();
+            });
         }
+    }
 
-        saveProductsToStorage();
-        loadProducts();
+    function finishAdminAction() {
         resetAdminForm();
         adminPanel.classList.add("hidden");
     }
@@ -287,8 +311,8 @@ function filterCategory(cat) {
     loadProducts();
 }
 
-function openProduct(id) {
-    const p = products.find(item => item.id === id);
+function openProduct(firestoreId) {
+    const p = products.find(item => item.firestoreId === firestoreId);
     appView.classList.add("hidden");
     adminPanel.classList.add("hidden");
     productDetailView.classList.remove("hidden");
@@ -306,9 +330,7 @@ function openProduct(id) {
     detailContainer.innerHTML = `
         <div class="detail-img-section">
             <img src="${firstImg}" id="mainDetailImg" alt="${p.title}" class="main-detail-img">
-            <div class="thumbnail-row">
-                ${thumbsHTML}
-            </div>
+            <div class="thumbnail-row">${thumbsHTML}</div>
         </div>
         <div class="detail-info">
             <span style="font-size:0.75rem; font-weight:bold; color:${p.stock === 'In Stock' ? '#16a34a' : '#ef4444'}">${p.stock}</span>
@@ -321,7 +343,7 @@ function openProduct(id) {
                 <strong>Product Description:</strong><br><br>
                 ${p.description.replace(/\n/g, '<br>')}
             </div>
-            <button class="add-btn" style="padding: 10px 20px; font-size: 0.95rem; width:100%; margin-top: 10px;" onclick="addToCart(${p.id})">Add to Cart</button>
+            <button class="add-btn" style="padding: 10px 20px; font-size: 0.95rem; width:100%; margin-top: 10px;" onclick="addToCart('${p.firestoreId}')">Add to Cart</button>
         </div>
     `;
 }
@@ -336,13 +358,13 @@ function goHome() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
+function addToCart(firestoreId) {
+    const product = products.find(p => p.firestoreId === firestoreId);
     if(product.stock === "Out of Stock") {
         alert("Sorry, this product is currently out of stock!");
         return;
     }
-    const cartItem = cart.find(item => item.id === productId);
+    const cartItem = cart.find(item => item.firestoreId === firestoreId);
 
     if (cartItem) {
         cartItem.quantity += 1;
@@ -367,7 +389,7 @@ function updateCart() {
                     <strong>${item.title}</strong>
                     <div>₹${item.price} x ${item.quantity}</div>
                 </div>
-                <button onclick="removeFromCart(${item.id})" style="background:none; border:none; color:#f37023; cursor:pointer; font-weight:bold;">✕</button>
+                <button onclick="removeFromCart('${item.firestoreId}')" style="background:none; border:none; color:#f37023; cursor:pointer; font-weight:bold;">✕</button>
             </div>
         `;
     });
@@ -376,8 +398,8 @@ function updateCart() {
     cartCount.innerText = count;
 }
 
-function removeFromCart(productId) {
-    cart = cart.filter(item => item.id !== productId);
+function removeFromCart(firestoreId) {
+    cart = cart.filter(item => item.firestoreId !== firestoreId);
     updateCart();
 }
 
@@ -419,4 +441,5 @@ orderForm.addEventListener("submit", (e) => {
     window.open(`https://wa.me/${myWhatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
 });
 
-loadProducts();
+// Start Real-Time Cloud Sync
+initRealtimeProducts();
