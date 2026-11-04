@@ -17,9 +17,10 @@ const defaultProducts = [
         category: "home",
         stock: "In Stock",
         images: [
-            "https://raw.githubusercontent.com/thaha77/zap_store/57c39ec94f30a75d44e9f0b5a158e3a6dcee59f5/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%281%29.jpeg",
-            "https://raw.githubusercontent.com/thaha77/zap_store/57c39ec94f30a75d44e9f0b5a158e3a6dcee59f5/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%282%29.jpeg",
-            "https://raw.githubusercontent.com/thaha77/zap_store/57c39ec94f30a75d44e9f0b5a158e3a6dcee59f5/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%282%29.jpeg"        ],
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%281%29.jpeg",
+            "https://raw.githubusercontent.com/thaha77/zap_store/main/WhatsApp%20Image%202026-11-03%20at%209.55.25%20PM%20%282%29.jpeg"
+        ],
         description: "✨ 450 ML HANDY VEGETABLE CHOPPER & ONION CUTTER ✨\n\nFeatures:\n1. Sharp stainless steel tri-blades for fast chopping.\n2. Durable food-grade plastic container (450 ML).\n3. Easy pull-cord mechanism for hassle-free operation.\n4. Perfect for onions, garlic, tomatoes, vegetables, and salads.\n\nEasy to clean and compact for everyday kitchen use."
     }
 ];
